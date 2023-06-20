@@ -15,6 +15,17 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
+    const tcp = b.addExecutable(.{
+        .name = "libp2p-tcp",
+        // In this case the main source file is merely a path, however, in more
+        // complicated build scripts, this could be a generated file.
+        .root_source_file = .{ .path = "src/tcp/tcp.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+
+    b.installArtifact(tcp);
+
     const lib = b.addStaticLibrary(.{
         .name = "libp2p-zig",
         // In this case the main source file is merely a path, however, in more
@@ -36,12 +47,18 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
     const run_main_tests = b.addRunArtifact(main_tests);
 
+    const varint_tests = b.addTest(.{
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+    const run_varint_tests = b.addRunArtifact(varint_tests);
     // This creates a build step. It will be visible in the `zig build --help` menu,
     // and can be selected like this: `zig build test`
     // This will evaluate the `test` step rather than the default, which is "install".
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&run_main_tests.step);
+    test_step.dependOn(&run_varint_tests.step);
 }
