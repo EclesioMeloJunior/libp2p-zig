@@ -50,7 +50,7 @@ pub fn build(b: *std.Build) void {
     const run_main_tests = b.addRunArtifact(main_tests);
 
     const varint_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = .{ .path = "src/varint.zig" },
         .target = target,
         .optimize = optimize,
     });
