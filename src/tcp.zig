@@ -1,4 +1,8 @@
 const std = @import("std");
+const os = @import("os");
+const varint = @import("./varint.zig");
+
+const multistreamProtocol = "/multistream/1.0.0";
 
 pub const Server = struct {
     stream_server: std.net.StreamServer,
@@ -21,12 +25,24 @@ pub const Server = struct {
         const conn = try self.stream_server.accept();
         defer conn.stream.close();
 
+        var alloc = std.heap.page_allocator;
+        var messageBuf = std.ArrayList(u8).init(alloc);
+        defer messageBuf.deinit();
+
+        var lenBuf: [10]u8 = undefined;
+        var multistreamLen: u64 = multistreamProtocol.*.len;
+        const write_bytes = varint.PutUvarint(multistreamLen, &lenBuf);
+
+        try messageBuf.appendSlice(lenBuf[0..write_bytes]);
+        try messageBuf.appendSlice(multistreamProtocol);
+        try messageBuf.append('\n');
+
         var buf: [1024]u8 = undefined;
         const msg_size = try conn.stream.read(buf[0..]);
 
         std.debug.print(">> {s}\n", .{buf[0..msg_size]});
 
-        const server_msg = "GoodBye";
-        _ = try conn.stream.write(server_msg);
+        var slice: []u8 = try messageBuf.toOwnedSlice();
+        _ = try conn.stream.write(slice);
     }
 };

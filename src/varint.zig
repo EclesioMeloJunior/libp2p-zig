@@ -1,6 +1,6 @@
 const std = @import("std");
 
-fn PutUvarint(v: u64, buf: []u8) usize {
+pub fn PutUvarint(v: u64, buf: []u8) usize {
     var valueToEncode = v;
     var i: usize = 0;
     while (valueToEncode >= 0x80) : (i += 1) {
@@ -13,7 +13,7 @@ fn PutUvarint(v: u64, buf: []u8) usize {
     return i + 1;
 }
 
-fn Uvarint(buf: []u8) !u64 {
+pub fn Uvarint(buf: []u8) !u64 {
     const maxVarintLen: usize = 10;
     var decoded_value: u64 = 0;
     var s: u6 = 0;
