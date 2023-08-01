@@ -1,0 +1,3 @@
+[submodule "zig-protobuf"]
+	path = zig-protobuf
+	url = git@github.com:Arwalk/zig-protobuf.git

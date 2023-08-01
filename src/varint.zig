@@ -4,12 +4,12 @@ pub fn PutUvarint(v: u64, buf: []u8) usize {
     var valueToEncode = v;
     var i: usize = 0;
     while (valueToEncode >= 0x80) : (i += 1) {
-        const u8_value: u8 = @truncate(u8, valueToEncode);
+        const u8_value: u8 = @truncate(valueToEncode);
         buf[i] = u8_value | 0x80;
         valueToEncode >>= 7;
     }
 
-    buf[i] = @truncate(u8, valueToEncode);
+    buf[i] = @as(u8, @truncate(valueToEncode));
     return i + 1;
 }
 

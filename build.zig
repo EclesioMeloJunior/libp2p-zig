@@ -26,15 +26,22 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(clientExec);
 
-    const varint_tests = b.addTest(.{
+    const run_varint_tests = b.addRunArtifact(b.addTest(.{
         .root_source_file = .{ .path = "src/varint.zig" },
         .target = target,
         .optimize = optimize,
-    });
-    const run_varint_tests = b.addRunArtifact(varint_tests);
+    }));
+
+    const run_crypto_tests = b.addRunArtifact(b.addTest(.{
+        .root_source_file = .{ .path = "src/crypto/crypto.zig" },
+        .target = target,
+        .optimize = optimize,
+    }));
+
     // This creates a build step. It will be visible in the `zig build --help` menu,
     // and can be selected like this: `zig build test`
     // This will evaluate the `test` step rather than the default, which is "install".
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&run_varint_tests.step);
+    test_step.dependOn(&run_crypto_tests.step);
 }
