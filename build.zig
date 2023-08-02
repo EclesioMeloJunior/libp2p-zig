@@ -26,22 +26,31 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(clientExec);
 
-    const run_varint_tests = b.addRunArtifact(b.addTest(.{
-        .root_source_file = .{ .path = "src/varint.zig" },
-        .target = target,
-        .optimize = optimize,
-    }));
+    const protobuf = b.createModule(.{ .source_file = .{ .path = "zig-protobuf/src/protobuf.zig" } });
 
-    const run_crypto_tests = b.addRunArtifact(b.addTest(.{
+    var tests = [_]*std.build.LibExeObjStep{ b.addTest(
+        .{
+            .name = "varint",
+            .root_source_file = .{ .path = "src/varint.zig" },
+            .target = target,
+            .optimize = optimize,
+        },
+    ), b.addTest(.{
+        .name = "crypto",
         .root_source_file = .{ .path = "src/crypto/crypto.zig" },
         .target = target,
         .optimize = optimize,
-    }));
+    }) };
 
-    // This creates a build step. It will be visible in the `zig build --help` menu,
-    // and can be selected like this: `zig build test`
-    // This will evaluate the `test` step rather than the default, which is "install".
     const test_step = b.step("test", "Run library tests");
-    test_step.dependOn(&run_varint_tests.step);
-    test_step.dependOn(&run_crypto_tests.step);
+
+    for (tests) |test_item| {
+        test_item.addModule("protobuf", protobuf);
+
+        // This creates a build step. It will be visible in the `zig build --help` menu,
+        // and can be selected like this: `zig build test`
+        // This will evaluate the `test` step rather than the default, which is "install".
+        const run_main_tests = b.addRunArtifact(test_item);
+        test_step.dependOn(&run_main_tests.step);
+    }
 }
