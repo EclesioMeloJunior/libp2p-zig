@@ -15,6 +15,9 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
+    const varint = b.createModule(.{ .source_file = .{ .path = "src/varint/varint.zig" } });
+    const protobuf = b.createModule(.{ .source_file = .{ .path = "zig-protobuf/src/protobuf.zig" } });
+
     const clientExec = b.addExecutable(.{
         .name = "client-libp2p",
         // In this case the main source file is merely a path, however, in more
@@ -23,29 +26,37 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
+    clientExec.addModule("varint", varint);
     b.installArtifact(clientExec);
-
-    const protobuf = b.createModule(.{ .source_file = .{ .path = "zig-protobuf/src/protobuf.zig" } });
 
     var tests = [_]*std.build.LibExeObjStep{ b.addTest(
         .{
             .name = "varint",
-            .root_source_file = .{ .path = "src/varint.zig" },
+            .root_source_file = .{ .path = "src/varint/varint.zig" },
             .target = target,
             .optimize = optimize,
         },
-    ), b.addTest(.{
-        .name = "crypto",
-        .root_source_file = .{ .path = "src/crypto/crypto.zig" },
-        .target = target,
-        .optimize = optimize,
-    }) };
+    ), b.addTest(
+        .{
+            .name = "crypto",
+            .root_source_file = .{ .path = "src/crypto/crypto.zig" },
+            .target = target,
+            .optimize = optimize,
+        },
+    ), b.addTest(
+        .{
+            .name = "peer-multihash",
+            .root_source_file = .{ .path = "src/peer/multihash.zig" },
+            .target = target,
+            .optimize = optimize,
+        },
+    ) };
 
     const test_step = b.step("test", "Run library tests");
 
     for (tests) |test_item| {
         test_item.addModule("protobuf", protobuf);
+        test_item.addModule("varint", varint);
 
         // This creates a build step. It will be visible in the `zig build --help` menu,
         // and can be selected like this: `zig build test`

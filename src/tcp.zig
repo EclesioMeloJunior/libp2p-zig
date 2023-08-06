@@ -1,6 +1,6 @@
 const std = @import("std");
 const os = @import("os");
-const varint = @import("./varint.zig");
+const varint = @import("varint");
 
 const multistreamProtocol = "/multistream/1.0.0";
 

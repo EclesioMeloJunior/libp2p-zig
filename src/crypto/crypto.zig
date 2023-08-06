@@ -1,9 +1,8 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const RndGen = std.rand.DefaultPrng;
-const crypto = std.crypto;
-const ed25519 = crypto.sign.Ed25519;
-const secp256k1 = crypto.ecc.Secp256k1;
+const ed25519 = std.crypto.sign.Ed25519;
+const secp256k1 = std.crypto.ecc.Secp256k1;
 
 const protobuf = @import("protobuf");
 const keyPair = @import("generated/crypto/pb.pb.zig");
@@ -25,7 +24,7 @@ fn generateEd25519KeyPair() !ed25519.KeyPair {
     return try ed25519.KeyPair.create(undefined);
 }
 
-fn marshalEd25519PublicKey(pub_key: ed25519.PublicKey, allocator: Allocator) ![]u8 {
+pub fn marshalEd25519PublicKey(pub_key: ed25519.PublicKey, allocator: Allocator) ![]u8 {
     var publickKeyPB = keyPair.PublicKey.init(allocator);
     defer publickKeyPB.deinit();
 
@@ -53,7 +52,7 @@ test "test basic sign and verify" {
     var diffData = "abcdefg";
     var verification = signatue.verify(diffData, kp.public_key);
 
-    try std.testing.expectError(crypto.errors.SignatureVerificationError.SignatureVerificationFailed, verification);
+    try std.testing.expectError(std.crypto.errors.SignatureVerificationError.SignatureVerificationFailed, verification);
 }
 
 test "encode/decode protobuf public key" {
