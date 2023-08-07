@@ -2,7 +2,7 @@ const std = @import("std");
 const ed25519 = std.crypto.sign.Ed25519;
 const Allocator = std.mem.Allocator;
 
-const crypto = @import("../crypto/crypto.zig");
+const crypto = @import("crypto");
 const multihash = @import("multihash.zig");
 
 const maxInlineKeyLength = 42;

@@ -15,9 +15,6 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const varint = b.createModule(.{ .source_file = .{ .path = "src/varint/varint.zig" } });
-    const protobuf = b.createModule(.{ .source_file = .{ .path = "zig-protobuf/src/protobuf.zig" } });
-
     const clientExec = b.addExecutable(.{
         .name = "client-libp2p",
         // In this case the main source file is merely a path, however, in more
@@ -26,7 +23,8 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    clientExec.addModule("varint", varint);
+
+    addModules(b, clientExec);
     b.installArtifact(clientExec);
 
     var tests = [_]*std.build.LibExeObjStep{ b.addTest(
@@ -55,8 +53,7 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run library tests");
 
     for (tests) |test_item| {
-        test_item.addModule("protobuf", protobuf);
-        test_item.addModule("varint", varint);
+        addModules(b, test_item);
 
         // This creates a build step. It will be visible in the `zig build --help` menu,
         // and can be selected like this: `zig build test`
@@ -64,4 +61,14 @@ pub fn build(b: *std.Build) void {
         const run_main_tests = b.addRunArtifact(test_item);
         test_step.dependOn(&run_main_tests.step);
     }
+}
+
+fn addModules(b: *std.Build, sc: *std.Build.Step.Compile) void {
+    const varint = b.createModule(.{ .source_file = .{ .path = "src/varint/varint.zig" } });
+    const crypto = b.createModule(.{ .source_file = .{ .path = "src/varint/crypto.zig" } });
+    const protobuf = b.createModule(.{ .source_file = .{ .path = "zig-protobuf/src/protobuf.zig" } });
+
+    sc.addModule("protobuf", protobuf);
+    sc.addModule("varint", varint);
+    sc.addModule("crypto", crypto);
 }

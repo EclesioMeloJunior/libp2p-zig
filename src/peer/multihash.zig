@@ -48,12 +48,9 @@ test "identity sum" {
     defer std.testing.allocator.free(buff);
 
     const mh = try identitySum(buff, std.testing.allocator);
+    defer mh.deinit();
 
     try std.testing.expect(mh.bytes[0] == 0x00);
     try std.testing.expect(mh.bytes[1] == 32);
     try std.testing.expect(std.mem.eql(u8, mh.bytes[2..], buff[0..]));
-
-    mh.deinit();
-
-    //std.debug.print("{any}", .{mh.bytes});
 }
