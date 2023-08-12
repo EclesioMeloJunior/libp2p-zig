@@ -20,7 +20,7 @@ const PeerIDKey = struct { encoded_public_key: []u8 };
 
 const TypeNotSupported = error.TypeNotSupported;
 
-fn generateEd25519KeyPair() !ed25519.KeyPair {
+pub fn generateEd25519KeyPair() !ed25519.KeyPair {
     return try ed25519.KeyPair.create(undefined);
 }
 
@@ -38,7 +38,7 @@ pub fn marshalEd25519PublicKey(pub_key: ed25519.PublicKey, allocator: Allocator)
     return try publickKeyPB.encode(allocator);
 }
 
-fn unmarshalEd25519PublicKey(encoded: []u8, allocator: Allocator) !keyPair.PublicKey {
+pub fn unmarshalEd25519PublicKey(encoded: []u8, allocator: Allocator) !keyPair.PublicKey {
     return try keyPair.PublicKey.decode(encoded, allocator);
 }
 

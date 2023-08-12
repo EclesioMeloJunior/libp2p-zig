@@ -1,3 +1,6 @@
 [submodule "zig-protobuf"]
 	path = zig-protobuf
 	url = git@github.com:Arwalk/zig-protobuf.git
+[submodule "base58-zig"]
+	path = base58-zig
+	url = https://github.com/ultd/base58-zig
