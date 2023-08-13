@@ -1,9 +1,12 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
+const ed25519 = std.crypto.sign.Ed25519;
 const sha2_256 = std.crypto.hash.sha2.Sha256;
 const varint = @import("varint");
+const crypto = @import("crypto");
 
+const maxInlineKeyLength = 42;
 const HashFunctionCode = enum(u8) {
     IdentityCode = 0x00,
     SHA2_256Code = 0x12,
@@ -27,8 +30,6 @@ pub const Multihash = struct {
         self.allocator.destroy(self);
     }
 };
-
-pub const Hasher = struct {};
 
 pub fn identitySum(buff: []u8, allocator: Allocator) !*Multihash {
     var encodedCode: [10]u8 = undefined;
@@ -61,6 +62,20 @@ pub fn sha2_256Sum(buff: []u8, allocator: Allocator) !*Multihash {
     @memcpy(mh.bytes[0..amountCode], encodedCode[0..amountCode]);
     @memcpy(mh.bytes[amountCode .. amountCode + amountBuffSize], encodedBuffSize[0..amountBuffSize]);
     @memcpy(mh.bytes[amountCode + amountBuffSize ..], hashed_data[0..32]);
+
+    return mh;
+}
+
+pub fn multihashFromPublicKey(pub_key: ed25519.PublicKey, allocator: Allocator) !*Multihash {
+    const encodedPubKey = try crypto.marshalEd25519PublicKey(pub_key, allocator);
+    defer allocator.free(encodedPubKey);
+
+    var mh: *Multihash = undefined;
+    if (encodedPubKey.len <= maxInlineKeyLength) {
+        mh = try identitySum(encodedPubKey, allocator);
+    } else {
+        mh = try sha2_256Sum(encodedPubKey, allocator);
+    }
 
     return mh;
 }
