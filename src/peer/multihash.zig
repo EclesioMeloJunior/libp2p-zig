@@ -5,6 +5,7 @@ const ed25519 = std.crypto.sign.Ed25519;
 const sha2_256 = std.crypto.hash.sha2.Sha256;
 const varint = @import("varint");
 const crypto = @import("crypto");
+const base58 = @import("base58");
 
 const maxInlineKeyLength = 42;
 const HashFunctionCode = enum(u8) {
@@ -16,18 +17,32 @@ const HashFunctionCode = enum(u8) {
 // <hash function code><digest size><hash function output>
 pub const Multihash = struct {
     bytes: []u8,
+
+    // only allocated once bas58Encode
+    // is called
+    encoded: []u8,
     allocator: Allocator,
 
     pub fn init(allocator: Allocator, cap: usize) !*Multihash {
         var instance = try allocator.create(Multihash);
         instance.bytes = try allocator.alloc(u8, cap);
+        instance.encoded = try allocator.alloc(u8, cap * 2);
         instance.allocator = allocator;
         return instance;
     }
 
     pub fn deinit(self: *Multihash) void {
         self.allocator.free(self.bytes);
+        self.allocator.free(self.encoded);
         self.allocator.destroy(self);
+    }
+
+    pub fn bas58Encode(self: *Multihash) !void {
+        const bas58Encoder = base58.Encoder.init(.{});
+        var size = try bas58Encoder.encode(self.bytes, self.encoded);
+        if (self.encoded.len != size) {
+            self.encoded = try self.allocator.realloc(self.encoded, size);
+        }
     }
 };
 
@@ -77,7 +92,12 @@ pub fn multihashFromPublicKey(pub_key: ed25519.PublicKey, allocator: Allocator) 
         mh = try sha2_256Sum(encodedPubKey, allocator);
     }
 
+    try mh.bas58Encode();
     return mh;
+}
+
+pub fn decodeFromB58(encoded: []const u8) !*Multihash {
+    _ = encoded;
 }
 
 test "identity sum" {

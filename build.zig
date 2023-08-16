@@ -90,10 +90,16 @@ fn addModules(b: *std.Build, sc: *std.Build.Step.Compile) void {
 
     sc.addModule("multihash", b.createModule(.{
         .source_file = std.build.LazyPath.relative("src/peer/multihash.zig"),
-        .dependencies = &[_]std.build.ModuleDependency{ std.build.ModuleDependency{ .module = crypto, .name = "crypto" }, std.build.ModuleDependency{ .module = varint, .name = "varint" } },
+        .dependencies = &[_]std.build.ModuleDependency{
+            std.build.ModuleDependency{ .module = crypto, .name = "crypto" },
+            std.build.ModuleDependency{ .module = varint, .name = "varint" },
+            std.build.ModuleDependency{ .module = base58, .name = "base58" },
+        },
     }));
     sc.addModule("peer", b.createModule(.{
         .source_file = std.build.LazyPath.relative("src/peer/peer.zig"),
-        .dependencies = &[_]std.build.ModuleDependency{ std.build.ModuleDependency{ .module = crypto, .name = "crypto" }, std.build.ModuleDependency{ .module = base58, .name = "base58" } },
+        .dependencies = &[_]std.build.ModuleDependency{
+            std.build.ModuleDependency{ .module = crypto, .name = "crypto" },
+        },
     }));
 }
