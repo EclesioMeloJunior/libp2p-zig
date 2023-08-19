@@ -16,6 +16,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
@@ -26,7 +28,7 @@ func main() {
 	// LibP2P code uses golog to log messages. They log with different
 	// string IDs (i.e. "swarm"). We can control the verbosity level for
 	// all loggers with:
-	golog.SetAllLoggers(golog.LevelInfo) // Change to INFO for extra info
+	golog.SetAllLoggers(golog.LevelDebug) // Change to INFO for extra info
 
 	// Parse options from the command line
 	listenF := flag.Int("l", 0, "wait for incoming connections")
@@ -49,8 +51,9 @@ func main() {
 		startListener(ctx, ha, *listenF, *insecureF)
 		// Run until canceled.
 		<-ctx.Done()
+	} else {
+		runSender(ctx, ha, *targetF)
 	}
-
 }
 
 func startListener(ctx context.Context, ha host.Host, listenPort int, insecure bool) {
@@ -116,6 +119,67 @@ func makeBasicHost(listenPort int, insecure bool, randseed int64) (host.Host, er
 	}
 
 	return libp2p.New(opts...)
+}
+
+func runSender(ctx context.Context, ha host.Host, targetPeer string) {
+	fullAddr := getHostAddress(ha)
+	log.Printf("I am %s\n", fullAddr)
+
+	// Set a stream handler on host A. /echo/1.0.0 is
+	// a user-defined protocol name.
+	ha.SetStreamHandler("/echo/1.0.0", func(s network.Stream) {
+		log.Println("sender received new stream")
+		if err := doEcho(s); err != nil {
+			log.Println(err)
+			s.Reset()
+		} else {
+			s.Close()
+		}
+	})
+
+	// Turn the targetPeer into a multiaddr.
+	maddr, err := ma.NewMultiaddr(targetPeer)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// Extract the peer ID from the multiaddr.
+	info, err := peer.AddrInfoFromP2pAddr(maddr)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// We have a peer ID and a targetAddr, so we add it to the peerstore
+	// so LibP2P knows how to contact it
+	ha.Peerstore().AddAddrs(info.ID, info.Addrs, peerstore.PermanentAddrTTL)
+
+	log.Println("sender opening stream")
+
+	// make a new stream from host B to host A
+	// it should be handled on host A by the handler we set above because
+	// we use the same /echo/1.0.0 protocol
+	s, err := ha.NewStream(context.Background(), info.ID, "/echo/1.0.0")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	log.Println("sender saying hello")
+	_, err = s.Write([]byte("Hello, world!\n"))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	out, err := io.ReadAll(s)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	log.Printf("read reply: %q\n", out)
 }
 
 // doEcho reads a line of data a stream and writes it back

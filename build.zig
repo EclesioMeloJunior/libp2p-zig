@@ -4,15 +4,15 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const client_exe = b.addExecutable(.{
+    const example_client_exe = b.addExecutable(.{
         .name = "client-libp2p",
-        .root_source_file = .{ .path = "src/client.zig" },
+        .root_source_file = .{ .path = "example/zig/client.zig" },
         .target = target,
         .optimize = optimize,
     });
 
-    addModules(b, client_exe);
-    b.installArtifact(client_exe);
+    addModules(b, example_client_exe);
+    b.installArtifact(example_client_exe);
 
     var tests = [_]*std.build.LibExeObjStep{ b.addTest(
         .{
@@ -25,13 +25,6 @@ pub fn build(b: *std.Build) void {
         .{
             .name = "crypto",
             .root_source_file = .{ .path = "src/crypto/crypto.zig" },
-            .target = target,
-            .optimize = optimize,
-        },
-    ), b.addTest(
-        .{
-            .name = "peer-multihash",
-            .root_source_file = .{ .path = "src/peer/multihash.zig" },
             .target = target,
             .optimize = optimize,
         },
@@ -88,18 +81,12 @@ fn addModules(b: *std.Build, sc: *std.Build.Step.Compile) void {
         crypto,
     );
 
-    sc.addModule("multihash", b.createModule(.{
-        .source_file = std.build.LazyPath.relative("src/peer/multihash.zig"),
-        .dependencies = &[_]std.build.ModuleDependency{
-            std.build.ModuleDependency{ .module = crypto, .name = "crypto" },
-            std.build.ModuleDependency{ .module = varint, .name = "varint" },
-            std.build.ModuleDependency{ .module = base58, .name = "base58" },
-        },
-    }));
     sc.addModule("peer", b.createModule(.{
         .source_file = std.build.LazyPath.relative("src/peer/peer.zig"),
         .dependencies = &[_]std.build.ModuleDependency{
             std.build.ModuleDependency{ .module = crypto, .name = "crypto" },
+            std.build.ModuleDependency{ .module = varint, .name = "varint" },
+            std.build.ModuleDependency{ .module = base58, .name = "base58" },
         },
     }));
 }
